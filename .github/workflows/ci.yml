@@ -4,48 +4,101 @@ on:
   push:
     branches:
       - master
-    tags:
-      - 'v*'
+      - prebuild
+    # tags:
+    # - 'v*'
   pull_request:
+  workflow_dispatch:
 
 jobs:
   build:
     name: Build
-    runs-on: windows-2022
+    runs-on: windows-latest
     permissions:
-      contents: read
+      contents: write
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-2022]
-        include:
-          - os: windows-2022
-            friendlyName: Windows
+        os: [windows-latest]
+        arch: [x64]
+        node: [24]
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
-      - name: Install Node.js
-        uses: actions/setup-node@v2.1.2
+      - uses: msys2/setup-msys2@v2
         with:
-          node-version: 22.14.0
+          msystem: UCRT64
+          install: jq base-devel binutils git mingw-w64-ucrt-x86_64-toolchain
+          pacboy: >-
+            ca-certificates yarn:p python:p
+          update: true
+          path-type: inherit
+          #location: C:\
+          release: false
+
+      - name: Install Node.js ${{ matrix.node }}
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node }}
+          architecture: ${{ matrix.arch }}
       - name: Install and build dependencies
         run: yarn
       - name: Lint
         run: yarn check-prettier
       - name: Build
-        run: yarn build
+        run: |
+          yarn build
       - name: Test
         run: yarn test
-      - name: Prebuild x64
+      - name: Prebuild x64-msvc
         run: npm run prebuild-napi-x64
+      - name: Prebuild x64-gnu
+        run: |
+          npm run prebuild-napi-x64
+        shell: msys2 {0}
+        # shell: ${{ matrix.arch == 'mingw' && 'msys2 {0}' || 'pwsh' }}
       - name: Prebuild arm64
         run: npm run prebuild-napi-arm64
-      - name: Prebuild x86
-        run: npm run prebuild-napi-ia32
+      # - name: Prebuild x86
+      # run: npm run prebuild-napi-ia32
+      - name: prepare publish
+        run: |
+          latest_version_published=$(sed -n 's/^\s\+\"version\": \"\(.*\)\",$/\1/p' package.json)
+          echo "tagName=v${latest_version_published}" >> $GITHUB_ENV
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > .npmrc
+          npm pack
+          ls -R prebuilds
+          ls *.tgz
+        shell: msys2 {0}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload to Release
+        if: ${{ startsWith(github.ref_name, 'v') && env.tagName != '' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ./*.tgz
+          tag_name: ${{ env.tagName }}
+          name: ${{ env.tagName }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Publish
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-        run: yarn upload
+        run: |
+          yarn upload
+          if git --no-pager log -1 --pretty=%B | grep "^v[0-9]\+\.[0-9]\+\.[0-9]\+$";
+          then
+            echo "Publishing regular release"
+            npm publish *.tgz --access public
+          elif git --no-pager log -1 --pretty=%B | grep "^v[0-9]\+\.[0-9]\+\.[0-9]\+-[0-9]\+$";
+          then
+            echo "Publishing beta release"
+            npm publish *.tgz --tag beta --access public
+          else
+            echo "Not a release, skipping publish"
+          fi
         env:
-          GITHUB_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -1,6 +1,6 @@
 const nativeModule =
   process.platform === 'win32'
-    ? require('../../build/Release/registry.node')
+    ? require('@bratel/prebuild-install')(`${__dirname}/../..`)
     : null
 
 /**

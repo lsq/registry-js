@@ -1,11 +1,11 @@
 {
-  "name": "registry-js",
+  "name": "@bratel/registry-js",
   "version": "1.16.1",
   "description": "A simple and opinionated library for working with the Windows registry",
   "main": "dist/lib/index.js",
   "typings": "dist/lib/index.d.ts",
   "scripts": {
-    "install": "prebuild-install || node-gyp rebuild",
+    "install": "prebuild-install",
     "build": "tsc",
     "pretest": "yarn build",
     "test": "jest -c jest.json",
@@ -22,16 +22,17 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/desktop/registry-js.git"
+    "url": "git+https://github.com/lsq/registry-js.git"
   },
   "keywords": [],
   "author": "",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/desktop/registry-js/issues"
+    "url": "https://github.com/lsq/registry-js/issues"
   },
-  "homepage": "https://github.com/desktop/registry-js#readme",
+  "homepage": "https://github.com/lsq/registry-js#readme",
   "devDependencies": {
+    "@bratel/prebuild": "^14.0.3",
     "@types/benchmark": "^1.0.31",
     "@types/jest": "^26.0.13",
     "@types/node": "^22.10.9",
@@ -39,14 +40,13 @@
     "jest": "^26.4.2",
     "node-abi": "^4.9.0",
     "node-gyp": "^11.2.0",
-    "prebuild": "^13.0.1",
-    "prettier": "^2.0.5",
+    "prettier": "^3.8.1",
     "ts-node": "^9.0.0",
     "typescript": "^5.8.2"
   },
   "dependencies": {
     "node-addon-api": "^8.3.1",
-    "prebuild-install": "^7.1.3"
+    "@bratel/prebuild-install": "^8.0.0"
   },
   "binary": {
     "napi_versions": [
