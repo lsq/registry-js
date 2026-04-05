@@ -6,7 +6,7 @@ const { spawnSync } = require('child_process')
 
 // Make sure output of the script is logged to the console and also the error is
 // caught and logged.
-if (!process.env.GITHUB_AUTH_TOKEN) {
+if (!process.env.GITHUB_TOKEN) {
   console.error(
     'GITHUB_AUTH_TOKEN is not set. Please set it to upload prebuilds.'
   )
@@ -30,7 +30,7 @@ try {
 
   const result = spawnSync(
     prebuildPath,
-    ['--upload-all', process.env.GITHUB_AUTH_TOKEN],
+    ['--upload-all', process.env.GITHUB_TOKEN],
     { stdio: 'inherit', shell: true }
   )
 

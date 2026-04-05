@@ -5,8 +5,8 @@ on:
     branches:
       - master
       - prebuild
-    # tags:
-    # - 'v*'
+    tags:
+      - 'v*'
   pull_request:
   workflow_dispatch:
 
@@ -99,6 +99,7 @@ jobs:
           else
             echo "Not a release, skipping publish"
           fi
+        shell: msys2 {0}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
